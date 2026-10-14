@@ -7,12 +7,19 @@ export function inferDimensions(boardSfen: sg.BoardSfen): sg.Dimensions {
   const firstFile = ranks[0].split('');
   let filesCnt = 0;
   let cnt = 0;
+  let inToken = false;
   for (const c of firstFile) {
+    // multi letter piece token, e.g. [running-pup] (taikyokudraft), counts as one file
+    if (inToken) {
+      if (c === ']') inToken = false;
+      continue;
+    }
     const nb = c.charCodeAt(0);
     if (nb < 58 && nb > 47) cnt = cnt * 10 + nb - 48;
     else if (c !== '+') {
       filesCnt += cnt + 1;
       cnt = 0;
+      if (c === '[') inToken = true;
     }
   }
   filesCnt += cnt;
@@ -47,7 +54,14 @@ export function sfenToBoard(
             i++;
           } else x -= nb1 - 48;
         } else {
-          const roleStr = sfen[i] === '+' && sfen.length > i + 1 ? `+${sfen[++i]}` : sfen[i];
+          let roleStr = sfen[i] === '+' && sfen.length > i + 1 ? `+${sfen[++i]}` : sfen[i];
+          // multi letter piece token, e.g. [running-pup], [+FREE-LEOPARD] (taikyokudraft)
+          if (roleStr.endsWith('[')) {
+            const end = sfen.indexOf(']', i);
+            if (end < 0) return pieces;
+            roleStr = sfen.slice(i - roleStr.length + 1, end + 1);
+            i = end;
+          }
           const role = sfenParser(roleStr);
           if (x >= 0 && role) {
             const color = roleStr === roleStr.toLowerCase() ? 'gote' : 'sente';
