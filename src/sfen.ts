@@ -118,7 +118,14 @@ export function sfenToHands(
       tmpNum = tmpNum * 10 + nb - 48;
       num = tmpNum;
     } else {
-      const roleStr = sfen[i] === '+' && sfen.length > i + 1 ? `+${sfen[++i]}` : sfen[i];
+      let roleStr = sfen[i] === '+' && sfen.length > i + 1 ? `+${sfen[++i]}` : sfen[i];
+      // multi letter piece token, e.g. 2[RUNNING-PUP] (taikyokudraft)
+      if (roleStr.endsWith('[')) {
+        const end = sfen.indexOf(']', i);
+        if (end < 0) break;
+        roleStr = sfen.slice(i - roleStr.length + 1, end + 1);
+        i = end;
+      }
       const role = sfenParser(roleStr);
       if (role) {
         const color = roleStr === roleStr.toLowerCase() ? 'gote' : 'sente';
